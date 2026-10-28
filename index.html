@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ShopBD – Smart Shopping Marketplace</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#F97316',
+              green: '#16A34A',
+              dark: '#0F172A',
+              accent: '#2563EB',
+              bg: '#F8FAFC'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18, ReactDOM & Babel for in-browser JSX parsing -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Hind Siliguri', sans-serif;
+      background-color: #F8FAFC;
+      color: #0F172A;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900 pb-20 md:pb-10">
+
+  <!-- Root element for React Mounting -->
+  <div id="root"></div>
+
+  <!-- APPLICATION SOURCE CODE -->
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, createContext, useContext } = React;
+
+    // --- 1. LOCAL DATA & FALLBACK STORAGE ENGINE ---
+    const INITIAL_CATEGORIES = [
+      { id: 'cat_electronics', name: 'Electronics', nameBn: 'ইলেকট্রনিক্স', icon: 'smartphone' },
+      { id: 'cat_fashion', name: 'Fashion', nameBn: 'ফ্যাশন ও পোশাক', icon: 'shirt' },
+      { id: 'cat_groceries', name: 'Groceries', nameBn: 'নিত্যপ্রয়োজনীয় গ্রোসারি', icon: 'shopping-cart' },
+      { id: 'cat_home', name: 'Home & Living', nameBn: 'হোম ও কিচেন', icon: 'home' },
+      { id: 'cat_beauty', name: 'Beauty & Personal Care', nameBn: 'বিউটি ও স্কিন কেয়ার', icon: 'sparkles' },
+      { id: 'cat_accessories', name: 'Mobile Accessories', nameBn: 'মোবাইল এক্সেসরিজ', icon: 'headphones' }
+    ];
+
+    const INITIAL_PRODUCTS = [
+      {
+        id: 'prod_1',
+        sellerId: 'seller_101',
+        sellerName: 'Tech Valley BD',
+        name: 'Wireless Bluetooth 5.3 Earbuds with Deep Bass',
+        nameBn: 'ওয়্যারলেস ব্লুটুথ ৫.৩ এয়ারবাডস - ডিপ বাস',
+        categoryId: 'cat_electronics',
+        brand: 'AcousticsBD',
+        price: 1550,
+        discountPrice: 1190,
+        stock: 35,
+        rating: 4.8,
+        reviewCount: 142,
+        status: 'approved',
+        images: ['https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&auto=format&fit=crop&q=80'],
+        description: 'উচ্চমানের নয়েজ ক্যান্সেলেশন এবং ৩০ ঘণ্টার ব্যাকআপ সহ জেনুইন ওয়্যারলেস ব্লুটুথ এয়ারবাডস।'
+      },
+      {
+        id: 'prod_2',
+        sellerId: 'seller_102',
+        sellerName: 'Aarong Styles',
+        name: 'Pure Cotton Embroidered Panjabi for Men',
+        nameBn: 'প্রিমিয়াম সুতি হাতের কাজের সেমি লং পাঞ্জাবি',
+        categoryId: 'cat_fashion',
+        brand: 'Handloom BD',
+        price: 2450,
+        discountPrice: 1850,
+        stock: 18,
+        rating: 4.9,
+        reviewCount: 89,
+        status: 'approved',
+        images: ['https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&auto=format&fit=crop&q=80'],
+        description: '১০০% খাঁটি সুতি কাপড়ে তৈরি আরামদায়ক ও আভিজাত্যপূর্ণ ডিজাইনার পাঞ্জাবি।'
+      },
+      {
+        id: 'prod_3',
+        sellerId: 'seller_103',
+        sellerName: 'Shundorban Honey Mart',
+        name: 'Raw Khalisha Flower Natural Sundarban Honey 500g',
+        nameBn: 'খাঁটি সুন্দরবনের খলিশা ফুলের প্রাকৃতিক মধু ৫০০ গ্রাম',
+        categoryId: 'cat_groceries',
+        brand: 'Prakriti',
+        price: 850,
+        discountPrice: 720,
+        stock: 50,
+        rating: 5.0,
+        reviewCount: 310,
+        status: 'approved',
+        images: ['https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=600&auto=format&fit=crop&q=80'],
+        description: 'সুন্দরবনের গভীর জঙ্গল থেকে সংগৃহীত শতভাগ খাঁটি ও প্রাকৃতিক খলিশা ফুলের মধু।'
+      },
+      {
+        id: 'prod_4',
+        sellerId: 'seller_101',
+        sellerName: 'Tech Valley BD',
+        name: 'Magnetic Fast Wireless Charging Powerbank 10000mAh',
+        nameBn: 'ম্যাগনেটিক ফাস্ট ওয়্যারলেস পাওয়ার ব্যাংক ১০০০০ এমএএইচ',
+        categoryId: 'cat_accessories',
+        brand: 'VoltPro',
+        price: 2200,
+        discountPrice: 1650,
+        stock: 22,
+        rating: 4.6,
+        reviewCount: 45,
+        status: 'approved',
+        images: ['https://images.unsplash.com/photo-1609592424365-1d6ebfa77d54?w=600&auto=format&fit=crop&q=80'],
+        description: '২২.৫ ওয়াট ফাস্ট চার্জিং সমর্থিত কম্প্যাক্ট ম্যাগনেটিক পাওয়ার ব্যাংক।'
+      }
+    ];
+
+    const BD_DISTRICTS = ['ঢাকা (Dhaka)', 'চট্টগ্রাম (Chattogram)', 'সিলেট (Sylhet)', 'রাজশাহী (Rajshahi)', 'খুলনা (Khulna)', 'বরিশাল (Barishal)', 'রংপুর (Rangpur)', 'ময়মনসিংহ (Mymensingh)'];
+
+    // --- 2. GLOBAL APP CONTEXT ---
+    const AppContext = createContext();
+
+    const AppProvider = ({ children }) => {
+      // Current logged in role emulation
+      const [currentRole, setCurrentRole] = useState('customer'); // 'customer' | 'seller' | 'admin'
+      const [activeTab, setActiveTab] = useState('home'); // Navigation Router state
+      const [products, setProducts] = useState(() => {
+        const local = localStorage.getItem('shopbd_products');
+        return local ? JSON.parse(local) : INITIAL_PRODUCTS;
+      });
+      const [cart, setCart] = useState(() => {
+        const local = localStorage.getItem('shopbd_cart');
+        return local ? JSON.parse(local) : [];
+      });
+      const [orders, setOrders] = useState(() => {
+        const local = localStorage.getItem('shopbd_orders');
+        return local ? JSON.parse(local) : [];
+      });
+      const [sellers, setSellers] = useState(() => {
+        const local = localStorage.getItem('shopbd_sellers');
+        return local ? JSON.parse(local) : [
+          { id: 'seller_101', name: 'Tech Valley BD', email: 'tech@valley.bd', phone: '01711000001', status: 'approved', balance: 14500 },
+          { id: 'seller_102', name: 'Aarong Styles', email: 'aarong@styles.bd', phone: '01811000002', status: 'approved', balance: 28400 },
+          { id: 'seller_103', name: 'Shundorban Honey Mart', email: 'honey@sundarban.bd', phone: '01911000003', status: 'pending', balance: 0 }
+        ];
+      });
+
+      const [searchQuery, setSearchQuery] = useState('');
+      const [selectedCategory, setSelectedCategory] = useState(null);
+      const [activeProduct, setActiveProduct] = useState(null);
+
+      // Persistence
+      useEffect(() => {
+        localStorage.setItem('shopbd_products', JSON.stringify(products));
+      }, [products]);
+
+      useEffect(() => {
+        localStorage.setItem('shopbd_cart', JSON.stringify(cart));
+      }, [cart]);
+
+      useEffect(() => {
+        localStorage.setItem('shopbd_orders', JSON.stringify(orders));
+      }, [orders]);
+
+      useEffect(() => {
+        localStorage.setItem('shopbd_sellers', JSON.stringify(sellers));
+      }, [sellers]);
+
+      // Lucide icon updater
+      useEffect(() => {
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      });
+
+      // Cart Actions
+      const addToCart = (product, quantity = 1) => {
+        setCart(prev => {
+          const index = prev.findIndex(item => item.productId === product.id);
+          if (index > -1) {
+            const next = [...prev];
+            next[index].quantity = Math.min(next[index].quantity + quantity, product.stock);
+            return next;
+          }
+          return [...prev, {
+            productId: product.id,
+            sellerId: product.sellerId,
+            sellerName: product.sellerName,
+            name: product.nameBn || product.name,
+            price: product.discountPrice || product.price,
+            stock: product.stock,
+            image: product.images[0],
+            quantity: quantity
+          }];
+        });
+      };
+
+      const updateCartQuantity = (productId, delta) => {
+        setCart(prev => prev.map(item => {
+          if (item.productId === productId) {
+            const newQty = item.quantity + delta;
+            return newQty > 0 && newQty <= item.stock ? { ...item, quantity: newQty } : item;
+          }
+          return item;
+        }).filter(item => item.quantity > 0));
+      };
+
+      const removeFromCart = (productId) => {
+        setCart(prev => prev.filter(item => item.productId !== productId));
+      };
+
+      const clearCart = () => setCart([]);
+
+      // Place Order with multi-vendor separation
+      const placeOrder = (orderData) => {
+        const orderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
+        const newOrder = {
+          id: orderId,
+          createdAt: new Date().toISOString(),
+          customerName: orderData.customerName,
+          customerPhone: orderData.customerPhone,
+          district: orderData.district,
+          address: orderData.address,
+          paymentMethod: orderData.paymentMethod,
+          paymentStatus: orderData.paymentMethod === 'cod' ? 'Pending' : 'Completed (Demo Mode)',
+          items: [...cart],
+          subtotal: orderData.subtotal,
+          deliveryFee: orderData.deliveryFee,
+          total: orderData.total,
+          status: 'Confirmed'
+        };
+
+        // Deduct inventory
+        setProducts(prev => prev.map(p => {
+          const inCart = cart.find(c => c.productId === p.id);
+          if (inCart) {
+            return { ...p, stock: Math.max(0, p.stock - inCart.quantity) };
+          }
+          return p;
+        }));
+
+        setOrders(prev => [newOrder, ...prev]);
+        clearCart();
+        return orderId;
+      };
+
+      return (
+        <AppContext.Provider value={{
+          currentRole, setCurrentRole,
+          activeTab, setActiveTab,
+          products, setProducts,
+          cart, addToCart, updateCartQuantity, removeFromCart, clearCart,
+          orders, setOrders, placeOrder,
+          sellers, setSellers,
+          searchQuery, setSearchQuery,
+          selectedCategory, setSelectedCategory,
+          activeProduct, setActiveProduct
+        }}>
+          {children}
+        </AppContext.Provider>
+      );
+    };
+
+    const useApp = () => useContext(AppContext);
+
+    // --- 3. TOP NAVIGATION BAR & ROLE CHANGER ---
+    const TopNavbar = () => {
+      const { currentRole, setCurrentRole, activeTab, setActiveTab, cart, searchQuery, setSearchQuery } = useApp();
+      const totalItems = cart.reduce((acc, c) => acc + c.quantity, 0);
+
+      return (
+        <header className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
+          {/* Platform Status & Role Toggle Banner */}
+          <div className="bg-slate-900 text-slate-300 text-xs py-1.5 px-4 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+              <span className="font-semibold text-white">ShopBD Engine:</span> Active (Demo DB)
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="hidden sm:inline text-slate-400">রোল সিলেক্ট করুন:</span>
+              <div className="flex bg-slate-800 rounded-md p-0.5 border border-slate-700">
+                <button
+                  onClick={() => { setCurrentRole('customer'); setActiveTab('home'); }}
+                  className={`px-2 py-0.5 rounded text-[11px] font-medium transition ${currentRole === 'customer' ? 'bg-orange-500 text-white' : 'hover:text-white'}`}>
+                  কাস্টমার
+                </button>
+                <button
+                  onClick={() => { setCurrentRole('seller'); setActiveTab('seller_dashboard'); }}
+                  className={`px-2 py-0.5 rounded text-[11px] font-medium transition ${currentRole === 'seller' ? 'bg-orange-500 text-white' : 'hover:text-white'}`}>
+                  সেলার প্যানেল
+                </button>
+                <button
+                  onClick={() => { setCurrentRole('admin'); setActiveTab('admin_dashboard'); }}
+                  className={`px-2 py-0.5 rounded text-[11px] font-medium transition ${currentRole === 'admin' ? 'bg-orange-500 text-white' : 'hover:text-white'}`}>
+                  এডমিন
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Bar */}
+          <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div 
+                onClick={() => { setActiveTab('home'); }} 
+                className="cursor-pointer flex items-center gap-1.5">
+                <div className="w-9 h-9 rounded-xl bg-orange-600 flex items-center justify-center text-white font-black text-xl shadow-md shadow-orange-500/30">
+                  S
+                </div>
+                <div>
+                  <span className="text-2xl font-black tracking-tight text-slate-900">Shop<span className="text-green-600">BD</span></span>
+                  <span className="hidden md:block text-[9px] uppercase font-bold text-slate-400 tracking-widest leading-none">Smart Marketplace</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Global Search Bar */}
+            <div className="flex-1 max-w-xl relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (activeTab !== 'home') setActiveTab('home');
+                }}
+                placeholder="পণ্য বা ব্র্যান্ড খুঁজুন..."
+                className="w-full pl-4 pr-10 py-2 rounded-full border border-slate-300 text-sm focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-100 transition bg-slate-50/50"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <i data-lucide="search" className="w-4 h-4"></i>
+              </span>
+            </div>
+
+            {/* Desktop Actions */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setActiveTab('orders_tracking')}
+                className="hidden md:flex items-center gap-1 text-sm font-medium text-slate-700 hover:text-orange-600 transition px-2 py-1">
+                <i data-lucide="package" className="w-4 h-4 text-slate-500"></i>
+                অর্ডার ট্র্যাক
+              </button>
+
+              <button
+                onClick={() => setActiveTab('cart')}
+                className="relative flex items-center gap-2 bg-orange-50 px-3.5 py-2 rounded-full hover:bg-orange-100 transition border border-orange-200/50">
+                <i data-lucide="shopping-bag" className="w-5 h-5 text-orange-600"></i>
+                <span className="font-bold text-orange-600 text-sm hidden sm:inline">কার্ট</span>
+                {totalItems > 0 && (
+                  <span className="bg-orange-600 text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                    {totalItems}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+        </header>
+      );
+    };
+
+    // --- 4. CUSTOMER VIEW: HOME & SHOPPING ---
+    const CustomerHome = () => {
+      const { products, addToCart, selectedCategory, setSelectedCategory, searchQuery, setActiveProduct, setActiveTab } = useApp();
+
+      const filteredProducts = useMemo(() => {
+        return products.filter(p => {
+          if (p.status !== 'approved') return false;
+          const matchesCategory = selectedCategory ? p.categoryId === selectedCategory : true;
+          const query = searchQuery.toLowerCase();
+          const matchesSearch = p.name.toLowerCase().includes(query) || (p.nameBn && p.nameBn.includes(query)) || p.brand.toLowerCase().includes(query);
+          return matchesCategory && matchesSearch;
+        });
+      }, [products, selectedCategory, searchQuery]);
+
+      return (
+        <div className="max-w-7xl mx-auto px-4 py-6 space-y-8">
+          {/* Promotional Banner */}
+          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-orange-600 via-amber-600 to-green-600 text-white p-6 sm:p-10 shadow-lg shadow-orange-600/10">
+            <div className="max-w-xl space-y-3">
+              <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold uppercase tracking-wider">
+                রমজান ও ঈদ ধামাকা অফার ২০২৬
+              </span>
+              <h1 className="text-3xl sm:text-4xl font-black leading-tight">
+                সেরা দেশীয় পণ্যে সর্বোচ্চ <span className="underline decoration-yellow-400">৫০% পর্যন্ত ছাড়!</span>
+              </h1>
+              <p className="text-white/90 text-sm sm:text-base">
+                সম্পূর্ণ ক্যাশ অন ডেলিভারি এবং জেনুইন সেলারদের নিশ্চয়তায় কেনাকাটা করুন শপবিডিতে।
+              </p>
+            </div>
+          </div>
+
+          {/* Categories Grid */}
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-slate-800">পপুলার ক্যাটাগরি</h2>
+              {selectedCategory && (
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className="text-xs text-orange-600 font-semibold hover:underline">
+                  সব দেখুন
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+              {INITIAL_CATEGORIES.map(cat => {
+                const isSelected = selectedCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(isSelected ? null : cat.id)}
+                    className={`p-3 rounded-xl flex flex-col items-center justify-center text-center transition border ${isSelected ? 'bg-orange-50 border-orange-500 shadow-sm' : 'bg-white border-slate-200 hover:border-slate-300'}`}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${isSelected ? 'bg-orange-500 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                      <i data-lucide={cat.icon} className="w-5 h-5"></i>
+                    </div>
+                    <span className="text-xs font-semibold text-slate-800">{cat.nameBn}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Product Feed */}
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">আমাদের কালেকশন</h2>
+                <p className="text-xs text-slate-500">{filteredProducts.length} টি পণ্য পাওয়া গেছে</p>
+              </div>
+            </div>
+
+            {filteredProducts.length === 0 ? (
+              <div className="bg-white rounded-2xl p-12 text-center border border-slate-200">
+                <i data-lucide="package-x" className="w-12 h-12 text-slate-400 mx-auto mb-3"></i>
+                <h3 className="text-base font-bold text-slate-700">কোন পণ্য পাওয়া যায়নি</h3>
+                <p className="text-xs text-slate-500 mt-1">অনুগ্রহ করে অন্য কিওয়ার্ড দিয়ে সার্চ করুন বা ক্যাটাগরি পরিবর্তন করুন।</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {filteredProducts.map(product => (
+                  <div
+                    key={product.id}
+                    className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between group">
+                    <div 
+                      onClick={() => { setActiveProduct(product); setActiveTab('product_details'); }}
+                      className="cursor-pointer">
+                      <div className="relative aspect-square bg-slate-100 overflow-hidden">
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                        />
+                        {product.discountPrice && (
+                          <div className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            ছাড় -৳{product.price - product.discountPrice}
+                          </div>
+                        )}
+                        <div className="absolute bottom-2 left-2 bg-slate-950/70 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <i data-lucide="star" className="w-3 h-3 text-yellow-400 fill-yellow-400"></i>
+                          <span>{product.rating}</span>
+                          <span className="text-slate-400">({product.reviewCount})</span>
+                        </div>
+                      </div>
+
+                      <div className="p-3">
+                        <p className="text-[11px] font-medium text-slate-400">{product.brand} • {product.sellerName}</p>
+                        <h3 className="text-sm font-semibold text-slate-800 line-clamp-2 mt-0.5 group-hover:text-orange-600 transition">
+                          {product.nameBn || product.name}
+                        </h3>
+                        <div className="mt-2 flex items-baseline gap-2">
+                          <span className="text-base font-black text-orange-600">
+                            ৳{product.discountPrice || product.price}
+                          </span>
+                          {product.discountPrice && (
+                            <span className="text-xs text-slate-400 line-through">
+                              ৳{product.price}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-3 pt-0">
+                      <button
+                        onClick={() => addToCart(product, 1)}
+                        disabled={product.stock <= 0}
+                        className={`w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition ${product.stock > 0 ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-sm' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>
+                        <i data-lucide="shopping-cart" className="w-3.5 h-3.5"></i>
+                        {product.stock > 0 ? 'কার্টে যোগ করুন' : 'স্টক শেষ'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    // --- 5. PRODUCT DETAILS MODAL/VIEW ---
+    const ProductDetailsView = () => {
+      const { activeProduct, addToCart, setActiveTab } = useApp();
+      const [qty, setQty] = useState(1);
+
+      if (!activeProduct) return null;
+
+      return (
+        <div className="max-w-5xl mx-auto px-4 py-8">
+          <button
+            onClick={() => setActiveTab('home')}
+            className="mb-4 inline-flex items-center gap-1 text-sm font-semibold text-slate-600 hover:text-orange-600">
+            <i data-lucide="arrow-left" className="w-4 h-4"></i> পণ্য তালিকায় ফিরে যান
+          </button>
+
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 md:p-8 grid md:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="aspect-square bg-slate-50 rounded-xl overflow-hidden border border-slate-100">
+                <img src={activeProduct.images[0]} alt={activeProduct.name} className="w-full h-full object-cover" />
+              </div>
+            </div>
+
+            <div className="flex flex-col justify-between">
+              <div className="space-y-4">
+                <div className="border-b border-slate-100 pb-4">
+                  <span className="text-xs font-bold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full border border-orange-200/40">
+                    {activeProduct.brand}
+                  </span>
+                  <h1 className="text-xl md:text-2xl font-bold text-slate-900 mt-2">
+                    {activeProduct.nameBn || activeProduct.name}
+                  </h1>
+                  <p className="text-xs text-slate-400 mt-1">ভেন্ডর: <span className="font-semibold text-slate-700">{activeProduct.sellerName}</span></p>
+                </div>
+
+                <div className="flex items-baseline gap-3">
+                  <span className="text-3xl font-black text-orange-600">
+                    ৳{activeProduct.discountPrice || activeProduct.price}
+                  </span>
+                  {activeProduct.discountPrice && (
+                    <span className="text-base text-slate-400 line-through">
+                      ৳{activeProduct.price}
+                    </span>
+                  )}
+                  <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">
+                    স্টকে আছে: {activeProduct.stock} টি
+                  </span>
+                </div>
+
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  {activeProduct.description}
+                </p>
+
+                <div className="space-y-2 pt-2 border-t border-slate-100 text-xs text-slate-500">
+                  <div className="flex items-center gap-2">
+                    <i data-lucide="shield-check" className="w-4 h-4 text-green-600"></i>
+                    <span>১০০% অথেনটিক এবং ভেরিফাইড প্রডাক্ট গ্যারান্টি</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <i data-lucide="truck" className="w-4 h-4 text-blue-600"></i>
+                    <span>সারাদেশে ২-৫ দিনের মধ্যে হোম ডেলিভারি</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-slate-100 flex items-center gap-4">
+                <div className="flex items-center border border-slate-300 rounded-lg">
+                  <button 
+                    onClick={() => setQty(Math.max(1, qty - 1))}
+                    className="px-3 py-2 text-slate-600 hover:bg-slate-100 font-bold">-</button>
+                  <span className="px-4 text-sm font-bold">{qty}</span>
+                  <button 
+                    onClick={() => setQty(Math.min(activeProduct.stock, qty + 1))}
+                    className="px-3 py-2 text-slate-600 hover:bg-slate-100 font-bold">+</button>
+                </div>
+                <button
+                  onClick={() => {
+                    addToCart(activeProduct, qty);
+                    setActiveTab('cart');
+                  }}
+                  className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-orange-600/20 transition">
+                  <i data-lucide="shopping-bag" className="w-4 h-4"></i> এখনই অর্ডার করুন
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // --- 6. SHOPPING CART & CHECKOUT ---
+    const CartAndCheckout = () => {
+      const { cart, updateCartQuantity, removeFromCart, placeOrder, setActiveTab } = useApp();
+      const [step, setStep] = useState(1); // 1: Cart, 2: Address & Payment, 3: Success
+
+      // Order Form state
+      const [fullName, setFullName] = useState('');
+      const [phone, setPhone] = useState('');
+      const [district, setDistrict] = useState(BD_DISTRICTS[0]);
+      const [address, setAddress] = useState('');
+      const [paymentMethod, setPaymentMethod] = useState('cod'); // 'cod' | 'bkash' | 'nagad' | 'rocket'
+      const [trxId, setTrxId] = useState('');
+      const [completedOrderId, setCompletedOrderId] = useState(null);
+
+      const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+      const deliveryFee = district.includes('Dhaka') ? 60 : 120;
+      const total = subtotal > 0 ? subtotal + deliveryFee : 0;
+
+      const handleConfirmOrder = (e) => {
+        e.preventDefault();
+        if (!fullName || !phone || !address) {
+          alert('অনুগ্রহ করে নাম, মোবাইল নম্বর এবং সম্পূর্ণ ঠিকানা দিন!');
+          return;
+        }
+        if (paymentMethod !== 'cod' && !trxId) {
+          alert('ডেমো পেমেন্টের জন্য একটি ট্রানজেকশন আইডি (TrxID) লিখুন!');
+          return;
+        }
+
+        const id = placeOrder({
+          customerName: fullName,
+          customerPhone: phone,
+          district,
+          address,
+          paymentMethod,
+          subtotal,
+          deliveryFee,
+          total
+        });
+
+        setCompletedOrderId(id);
+        setStep(3);
+      };
+
+      if (step === 3) {
+        return (
+          <div className="max-w-md mx-auto px-4 py-16 text-center">
+            <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i data-lucide="check" className="w-8 h-8 stroke-[3]"></i>
+            </div>
+            <h2 className="text-2xl font-black text-slate-900">অর্ডার সফলভাবে সম্পন্ন হয়েছে!</h2>
+            <p className="text-slate-500 text-sm mt-2">আপনার অর্ডার আইডি নম্বর:</p>
+            <span className="inline-block bg-slate-100 px-4 py-1.5 rounded-lg font-mono font-bold text-orange-600 text-base mt-1">
+              {completedOrderId}
+            </span>
+            <p className="text-xs text-slate-400 mt-4 leading-relaxed">
+              শীঘ্রই আমাদের প্রতিনিধি আপনার সাথে ফোন করে অর্ডারটি নিশ্চিত করবেন।
+            </p>
+            <div className="mt-8 flex flex-col gap-2">
+              <button
+                onClick={() => setActiveTab('orders_tracking')}
+                className="w-full bg-slate-900 text-white font-bold py-2.5 rounded-lg text-sm hover:bg-slate-800">
+                অর্ডারের স্ট্যাটাস দেখুন
+              </button>
+              <button
+                onClick={() => setActiveTab('home')}
+                className="w-full bg-slate-100 text-slate-700 font-bold py-2.5 rounded-lg text-sm hover:bg-slate-200">
+                আরও কেনাকাটা করুন
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-black text-slate-900">
+              {step === 1 ? 'শপিং কার্ট' : 'চেকআউট ও ডেলিভারি তথ্য'}
+            </h1>
+            <span className="text-xs font-semibold px-3 py-1 bg-slate-100 rounded-full text-slate-600">
+              ধাপ {step} এর ২
+            </span>
+          </div>
+
+          {cart.length === 0 ? (
+            <div className="bg-white rounded-2xl p-12 text-center border border-slate-200">
+              <i data-lucide="shopping-cart" className="w-12 h-12 text-slate-300 mx-auto mb-3"></i>
+              <h2 className="text-base font-bold text-slate-800">আপনার কার্ট খালি</h2>
+              <p className="text-xs text-slate-500 mt-1">পছন্দের পণ্য খুঁজে নিয়ে কার্টে যোগ করুন।</p>
+              <button
+                onClick={() => setActiveTab('home')}
+                className="mt-6 bg-orange-600 text-white font-bold px-6 py-2 rounded-lg text-xs hover:bg-orange-700 transition">
+                শপিং শুরু করুন
+              </button>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-8">
+              {/* Left Column: Items or Address */}
+              <div className="md:col-span-2 space-y-4">
+                {step === 1 ? (
+                  <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+                    {cart.map(item => (
+                      <div key={item.productId} className="p-4 flex gap-4 items-center">
+                        <img src={item.image} alt={item.name} className="w-16 h-16 rounded-lg object-cover bg-slate-50 border border-slate-100" />
+                        <div className="flex-1">
+                          <h3 className="text-sm font-semibold text-slate-800">{item.name}</h3>
+                          <span className="text-xs text-slate-400">প্রতি পিস: ৳{item.price}</span>
+                          <div className="text-sm font-black text-orange-600 mt-1">৳{item.price * item.quantity}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center border border-slate-200 rounded-md">
+                            <button onClick={() => updateCartQuantity(item.productId, -1)} className="px-2 py-0.5 text-slate-600 hover:bg-slate-100">-</button>
+                            <span className="px-2 text-xs font-bold">{item.quantity}</span>
+                            <button onClick={() => updateCartQuantity(item.productId, 1)} className="px-2 py-0.5 text-slate-600 hover:bg-slate-100">+</button>
+                          </div>
+                          <button onClick={() => removeFromCart(item.productId)} className="text-slate-400 hover:text-red-500 p-1">
+                            <i data-lucide="trash-2" className="w-4 h-4"></i>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <form id="checkout-form" onSubmit={handleConfirmOrder} className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+                    <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">১. গ্রাহকের ঠিকানা</h3>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">আপনার নাম *</label>
+                        <input
+                          type="text"
+                          required
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          placeholder="উদা: আরিফুল ইসলাম"
+                          className="w-full text-sm px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:border-orange-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">সচল মোবাইল নম্বর *</label>
+                        <input
+                          type="tel"
+                          required
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          placeholder="০১৭XXXXXXXX"
+                          className="w-full text-sm px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:border-orange-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">জেলা *</label>
+                        <select
+                          value={district}
+                          onChange={(e) => setDistrict(e.target.value)}
+                          className="w-full text-sm px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:border-orange-500">
+                          {BD_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">পূর্ণাঙ্গ ঠিকানা *</label>
+                        <input
+                          type="text"
+                          required
+                          value={address}
+                          onChange={(e) => setAddress(e.target.value)}
+                          placeholder="বাড়ি নং, রোড নং, এলাকা..."
+                          className="w-full text-sm px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:border-orange-500"
+                        />
+                      </div>
+                    </div>
+
+                    <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 pt-2">২. পেমেন্ট মেথড সিলেক্ট করুন</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {[
+                        { id: 'cod', label: 'Cash on Delivery', sub: 'পণ্য হাতে পেয়ে পেমেন্ট' },
+                        { id: 'bkash', label: 'bKash (বিকাশ)', sub: 'ডেমো গেটওয়ে' },
+                        { id: 'nagad', label: 'Nagad (নগদ)', sub: 'ডেমো গেটওয়ে' },
+                        { id: 'rocket', label: 'Rocket (রকেট)', sub: 'ডেমো গেটওয়ে' }
+                      ].map(method => (
+                        <div
+                          key={method.id}
+                          onClick={() => setPaymentMethod(method.id)}
+                          className={`p-3 rounded-xl border cursor-pointer text-center transition ${paymentMethod === method.id ? 'border-orange-500 bg-orange-50/50 ring-2 ring-orange-200' : 'border-slate-200 bg-slate-50/50'}`}>
+                          <div className="text-xs font-bold text-slate-800">{method.label}</div>
+                          <div className="text-[10px] text-slate-400 mt-0.5">{method.sub}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {paymentMethod !== 'cod' && (
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
+                        <p className="text-xs text-amber-800">
+                          <span className="font-bold">সতর্কবার্তা:</span> এটি একটি টেস্ট/ডেমো ট্রানজেকশন প্ল্যাটফর্ম। আপনার পছন্দের নম্বরে টাকা পাঠানোর পর প্রাপ্ত ডেমো ট্রানজেকশন আইডি লিখুন।
+                        </p>
+                        <input
+                          type="text"
+                          placeholder="TrxID লিখুন (উদা: TRX9876543)"
+                          value={trxId}
+                          onChange={(e) => setTrxId(e.target.value)}
+                          className="w-full text-xs p-2 rounded border border-amber-300 bg-white"
+                        />
+                      </div>
+                    )}
+                  </form>
+                )}
+              </div>
+
+              {/* Right Column: Order Summary */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 h-fit space-y-4">
+                <h3 className="text-sm font-bold text-slate-800">অর্ডার সারসংক্ষেপ</h3>
+                <div className="space-y-2 text-xs text-slate-600 border-b border-slate-100 pb-4">
+                  <div className="flex justify-between">
+                    <span>পণ্যের মূল্য</span>
+                    <span className="font-bold text-slate-900">৳{subtotal}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>ডেলিভারি চার্জ ({district.includes('Dhaka') ? 'ঢাকার ভিতরে' : 'ঢাকার বাইরে'})</span>
+                    <span className="font-bold text-slate-900">৳{deliveryFee}</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-baseline pt-1">
+                  <span className="text-sm font-bold text-slate-800">সর্বমোট প্রদেয়</span>
+                  <span className="text-xl font-black text-orange-600">৳{total}</span>
+                </div>
+
+                {step === 1 ? (
+                  <button
+                    onClick={() => setStep(2)}
+                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 rounded-lg text-sm shadow-md shadow-orange-600/20 transition">
+                    পরবর্তী ধাপে যান
+                  </button>
+                ) : (
+                  <div className="space-y-2">
+                    <button
+                      type="submit"
+                      form="checkout-form"
+                      className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg text-sm shadow-md shadow-green-600/20 transition">
+                      অর্ডার কনফার্ম করুন
+                    </button>
+                    <button
+                      onClick={() => setStep(1)}
+                      className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2 rounded-lg text-xs transition">
+                      কার্টে ফিরে যান
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // --- 7. ORDER TRACKING VIEW ---
+    const OrderTrackingView = () => {
+      const { orders } = useApp();
+
+      return (
+        <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+          <div>
+            <h1 className="text-2xl font-black text-slate-900">অর্ডার ট্র্যাকিং ও হিস্ট্রি</h1>
+            <p className="text-xs text-slate-500 mt-1">আপনার প্লেস করা সকল অর্ডারের লাইভ স্ট্যাটাস পর্যবেক্ষণ করুন।</p>
+          </div>
+
+          {orders.length === 0 ? (
+            <div className="bg-white rounded-2xl p-12 text-center border border-slate-200">
+              <i data-lucide="package" className="w-12 h-12 text-slate-300 mx-auto mb-2"></i>
+              <h3 className="text-base font-bold text-slate-800">এখনো কোনো অর্ডার নেই</h3>
+              <p className="text-xs text-slate-400 mt-1">অর্ডার করার পর বিস্তারিত এখানে দেখতে পারবেন।</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {orders.map(order => (
+                <div key={order.id} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div>
+                      <span className="text-xs text-slate-400">অর্ডার নম্বর:</span>
+                      <span className="ml-1.5 font-mono font-bold text-slate-800 text-sm">{order.id}</span>
+                      <span className="text-[11px] text-slate-400 block">{new Date(order.createdAt).toLocaleString('bn-BD')}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-200">
+                        {order.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Order items */}
+                  <div className="space-y-2">
+                    {order.items.map((it, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-xs text-slate-600">
+                        <div className="flex items-center gap-2">
+                          <img src={it.image} alt={it.name} className="w-8 h-8 rounded object-cover" />
+                          <span>{it.name} <strong className="text-slate-800">× {it.quantity}</strong></span>
+                        </div>
+                        <span className="font-semibold text-slate-800">৳{it.price * it.quantity}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="border-t border-slate-100 pt-3 flex flex-wrap justify-between items-center text-xs">
+                    <div>
+                      <span className="text-slate-400">ডেলিভারি ঠিকানা:</span>{' '}
+                      <span className="text-slate-700 font-medium">{order.address}, {order.district}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-slate-400">সর্বমোট বিল:</span>{' '}
+                      <span className="text-base font-black text-orange-600 ml-1">৳{order.total}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // --- 8. MULTI-VENDOR SELLER DASHBOARD ---
+    const SellerDashboard = () => {
+      const { products, setProducts, orders } = useApp();
+      const currentSellerId = 'seller_101'; // Default emulated seller
+
+      const [showAddModal, setShowAddModal] = useState(false);
+      const [newProdName, setNewProdName] = useState('');
+      const [newProdNameBn, setNewProdNameBn] = useState('');
+      const [newProdPrice, setNewProdPrice] = useState('');
+      const [newProdDiscount, setNewProdDiscount] = useState('');
+      const [newProdStock, setNewProdStock] = useState('');
+      const [newProdCategory, setNewProdCategory] = useState(INITIAL_CATEGORIES[0].id);
+      const [newProdImage, setNewProdImage] = useState('');
+
+      const sellerProducts = products.filter(p => p.sellerId === currentSellerId);
+      const totalInventoryVal = sellerProducts.reduce((acc, p) => acc + (p.price * p.stock), 0);
+
+      const handleAddProduct = (e) => {
+        e.preventDefault();
+        const pId = 'prod_' + Date.now();
+        const newProduct = {
+          id: pId,
+          sellerId: currentSellerId,
+          sellerName: 'Tech Valley BD',
+          name: newProdName,
+          nameBn: newProdNameBn || newProdName,
+          categoryId: newProdCategory,
+          brand: 'Tech Valley',
+          price: Number(newProdPrice),
+          discountPrice: newProdDiscount ? Number(newProdDiscount) : undefined,
+          stock: Number(newProdStock),
+          rating: 5.0,
+          reviewCount: 0,
+          status: 'pending', // Requires admin review
+          images: [newProdImage || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600&auto=format&fit=crop&q=80'],
+          description: 'সেলার কর্তৃক যুক্তকৃত প্রডাক্ট।'
+        };
+
+        setProducts([newProduct, ...products]);
+        setShowAddModal(false);
+        alert('আপনার পণ্যটি পর্যালোচনার জন্য জমা হয়েছে! এডমিন অনুমোদনের পর তা ওয়েবসাইটে প্রদর্শিত হবে।');
+      };
+
+      return (
+        <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+          <div className="flex flex-wrap justify-between items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200">
+            <div>
+              <div className="inline-block text-[11px] font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200 mb-1">
+                ভেরিফাইড মার্চেন্ট
+              </div>
+              <h1 className="text-2xl font-black text-slate-900">Tech Valley BD - সেলার হাব</h1>
+              <p className="text-xs text-slate-400 mt-0.5">আপনার শপের পণ্য স্টক এবং অর্ডার ম্যানেজমেন্ট করুন</p>
+            </div>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-4 py-2.5 rounded-lg text-xs flex items-center gap-1.5 shadow-md shadow-orange-600/20 transition">
+              <i data-lucide="plus-circle" className="w-4 h-4"></i> নতুন পণ্য যোগ করুন
+            </button>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded-xl border border-slate-200">
+              <span className="text-xs text-slate-400 font-medium">মোট পণ্য</span>
+              <div className="text-2xl font-black text-slate-900 mt-1">{sellerProducts.length} টি</div>
+            </div>
+            <div className="bg-white p-4 rounded-xl border border-slate-200">
+              <span className="text-xs text-slate-400 font-medium">মোট ইনভেন্টরি ভ্যালু</span>
+              <div className="text-2xl font-black text-orange-600 mt-1">৳{totalInventoryVal.toLocaleString()}</div>
+            </div>
+            <div className="bg-white p-4 rounded-xl border border-slate-200">
+              <span className="text-xs text-slate-400 font-medium">প্লাটফর্ম কমিশন রেট</span>
+              <div className="text-2xl font-black text-slate-900 mt-1">১০%</div>
+            </div>
+            <div className="bg-white p-4 rounded-xl border border-slate-200">
+              <span className="text-xs text-slate-400 font-medium">রেটিং স্কোর</span>
+              <div className="text-2xl font-black text-green-600 mt-1">৪.৯ ★</div>
+            </div>
+          </div>
+
+          {/* Product Management Table */}
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center">
+              <h3 className="font-bold text-sm text-slate-800">পণ্য তালিকা ও স্টক স্ট্যাটাস</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-600">
+                <thead className="bg-slate-50 text-slate-400 border-b border-slate-200 uppercase font-semibold">
+                  <tr>
+                    <th className="p-3">পণ্য</th>
+                    <th className="p-3">মূল্য</th>
+                    <th className="p-3">স্টক</th>
+                    <th className="p-3">স্ট্যাটাস</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {sellerProducts.map(prod => (
+                    <tr key={prod.id} className="hover:bg-slate-50/50">
+                      <td className="p-3 flex items-center gap-3">
+                        <img src={prod.images[0]} alt={prod.name} className="w-10 h-10 rounded object-cover border border-slate-100" />
+                        <div>
+                          <p className="font-bold text-slate-800 text-xs">{prod.nameBn || prod.name}</p>
+                          <span className="text-[10px] text-slate-400">{prod.brand}</span>
+                        </div>
+                      </td>
+                      <td className="p-3 font-semibold text-slate-800">৳{prod.discountPrice || prod.price}</td>
+                      <td className="p-3">
+                        <span className={`font-bold ${prod.stock < 10 ? 'text-red-500' : 'text-slate-800'}`}>
+                          {prod.stock} টি
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${prod.status === 'approved' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
+                          {prod.status === 'approved' ? 'অনুমোদিত' : 'অনুমোদন পেন্ডিং'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Add Product Modal */}
+          {showAddModal && (
+            <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                  <h3 className="font-bold text-slate-900 text-base">নতুন পণ্য যুক্ত করুন</h3>
+                  <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" className="w-5 h-5"></i>
+                  </button>
+                </div>
+                <form onSubmit={handleAddProduct} className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">পণ্যের ইংরেজি নাম *</label>
+                    <input required type="text" value={newProdName} onChange={e => setNewProdName(e.target.value)} className="w-full text-xs p-2 rounded-lg border border-slate-300" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">পণ্যের বাংলা নাম</label>
+                    <input type="text" value={newProdNameBn} onChange={e => setNewProdNameBn(e.target.value)} className="w-full text-xs p-2 rounded-lg border border-slate-300" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">রেগুলার মূল্য (৳) *</label>
+                      <input required type="number" value={newProdPrice} onChange={e => setNewProdPrice(e.target.value)} className="w-full text-xs p-2 rounded-lg border border-slate-300" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">ডিসকাউন্ট মূল্য (৳)</label>
+                      <input type="number" value={newProdDiscount} onChange={e => setNewProdDiscount(e.target.value)} className="w-full text-xs p-2 rounded-lg border border-slate-300" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">মজুত স্টক *</label>
+                      <input required type="number" value={newProdStock} onChange={e => setNewProdStock(e.target.value)} className="w-full text-xs p-2 rounded-lg border border-slate-300" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">ক্যাটাগরি</label>
+                      <select value={newProdCategory} onChange={e => setNewProdCategory(e.target.value)} className="w-full text-xs p-2 rounded-lg border border-slate-300">
+                        {INITIAL_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.nameBn}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">ইমেজ লিঙ্ক (URL)</label>
+                    <input type="url" placeholder="https://..." value={newProdImage} onChange={e => setNewProdImage(e.target.value)} className="w-full text-xs p-2 rounded-lg border border-slate-300" />
+                  </div>
+                  <button type="submit" className="w-full bg-orange-600 text-white font-bold py-2.5 rounded-lg text-xs hover:bg-orange-700">
+                    সাবমিট করুন
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // --- 9. CENTRAL ADMINISTRATOR DASHBOARD ---
+    const AdminDashboard = () => {
+      const { products, setProducts, sellers, setSellers, orders } = useApp();
+
+      const toggleProductStatus = (productId, newStatus) => {
+        setProducts(prev => prev.map(p => p.id === productId ? { ...p, status: newStatus } : p));
+      };
+
+      const toggleSellerStatus = (sellerId, newStatus) => {
+        setSellers(prev => prev.map(s => s.id === sellerId ? { ...s, status: newStatus } : s));
+      };
+
+      return (
+        <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+          <div className="bg-slate-900 text-white p-6 rounded-2xl flex flex-wrap justify-between items-center gap-4">
+            <div>
+              <span className="text-xs font-mono uppercase tracking-widest text-orange-400 font-bold">সুপার এডমিন কন্ট্রোল</span>
+              <h1 className="text-2xl font-black mt-1">শপবিডি প্ল্যাটফর্ম ওভারভিউ</h1>
+            </div>
+            <div className="text-right text-xs text-slate-400">
+              নিরাপত্তা নীতি: <span className="text-green-400 font-semibold">কঠোর RBAC এনফোর্সড</span>
+            </div>
+          </div>
+
+          {/* Pending Products Approval */}
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center">
+              <h3 className="font-bold text-sm text-slate-800">পণ্য অনুমোদন ও নিরীক্ষণ</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-600">
+                <thead className="bg-slate-50 text-slate-400 border-b border-slate-200 uppercase font-semibold">
+                  <tr>
+                    <th className="p-3">পণ্য ও ভেন্ডর</th>
+                    <th className="p-3">মূল্য</th>
+                    <th className="p-3">বর্তমান স্ট্যাটাস</th>
+                    <th className="p-3 text-right">পদক্ষেপ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {products.map(prod => (
+                    <tr key={prod.id}>
+                      <td className="p-3">
+                        <span className="font-bold text-slate-900 block">{prod.nameBn || prod.name}</span>
+                        <span className="text-[10px] text-slate-400">ভেন্ডর: {prod.sellerName}</span>
+                      </td>
+                      <td className="p-3 font-semibold text-slate-800">৳{prod.discountPrice || prod.price}</td>
+                      <td className="p-3">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${prod.status === 'approved' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
+                          {prod.status}
+                        </span>
+                      </td>
+                      <td className="p-3 text-right space-x-2">
+                        {prod.status !== 'approved' ? (
+                          <button
+                            onClick={() => toggleProductStatus(prod.id, 'approved')}
+                            className="bg-green-600 text-white px-2.5 py-1 rounded text-[11px] font-bold hover:bg-green-700">
+                            অনুমোদন দিন
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => toggleProductStatus(prod.id, 'pending')}
+                            className="bg-slate-200 text-slate-700 px-2.5 py-1 rounded text-[11px] font-bold hover:bg-slate-300">
+                            হোল্ড করুন
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Seller Approvals */}
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+            <div className="p-4 border-b border-slate-100">
+              <h3 className="font-bold text-sm text-slate-800">মার্কেটপ্লেস ভেন্ডর ম্যানেজমেন্ট</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-600">
+                <thead className="bg-slate-50 text-slate-400 border-b border-slate-200 uppercase font-semibold">
+                  <tr>
+                    <th className="p-3">মার্চেন্ট নাম</th>
+                    <th className="p-3">যোগাযোগ</th>
+                    <th className="p-3">ভেরিফিকেশন</th>
+                    <th className="p-3 text-right">অ্যাকশন</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {sellers.map(s => (
+                    <tr key={s.id}>
+                      <td className="p-3 font-bold text-slate-900">{s.name}</td>
+                      <td className="p-3 text-slate-500">{s.phone} | {s.email}</td>
+                      <td className="p-3">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${s.status === 'approved' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                          {s.status}
+                        </span>
+                      </td>
+                      <td className="p-3 text-right">
+                        {s.status !== 'approved' ? (
+                          <button
+                            onClick={() => toggleSellerStatus(s.id, 'approved')}
+                            className="bg-green-600 text-white px-2.5 py-1 rounded text-[11px] font-bold">
+                            অনুমোদন করুন
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => toggleSellerStatus(s.id, 'suspended')}
+                            className="bg-red-100 text-red-600 px-2.5 py-1 rounded text-[11px] font-bold">
+                            সাসপেন্ড
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // --- 10. ROOT CONTROLLER & VIEW SWITCHER ---
+    const MainApp = () => {
+      const { activeTab, setActiveTab, currentRole } = useApp();
+
+      return (
+        <div className="min-h-screen flex flex-col justify-between">
+          <div>
+            <TopNavbar />
+            <main>
+              {activeTab === 'home' && <CustomerHome />}
+              {activeTab === 'product_details' && <ProductDetailsView />}
+              {activeTab === 'cart' && <CartAndCheckout />}
+              {activeTab === 'orders_tracking' && <OrderTrackingView />}
+              {activeTab === 'seller_dashboard' && <SellerDashboard />}
+              {activeTab === 'admin_dashboard' && <AdminDashboard />}
+            </main>
+          </div>
+
+          {/* Sticky Mobile Bottom Navigation */}
+          <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 flex justify-around py-2.5 px-2 shadow-lg">
+            <button
+              onClick={() => setActiveTab('home')}
+              className={`flex flex-col items-center text-[10px] font-bold ${activeTab === 'home' ? 'text-orange-600' : 'text-slate-500'}`}>
+              <i data-lucide="home" className="w-5 h-5 mb-0.5"></i> হোম
+            </button>
+            <button
+              onClick={() => setActiveTab('cart')}
+              className={`flex flex-col items-center text-[10px] font-bold ${activeTab === 'cart' ? 'text-orange-600' : 'text-slate-500'}`}>
+              <i data-lucide="shopping-bag" className="w-5 h-5 mb-0.5"></i> কার্ট
+            </button>
+            <button
+              onClick={() => setActiveTab('orders_tracking')}
+              className={`flex flex-col items-center text-[10px] font-bold ${activeTab === 'orders_tracking' ? 'text-orange-600' : 'text-slate-500'}`}>
+              <i data-lucide="truck" className="w-5 h-5 mb-0.5"></i> অর্ডার
+            </button>
+            <button
+              onClick={() => setActiveTab(currentRole === 'seller' ? 'seller_dashboard' : currentRole === 'admin' ? 'admin_dashboard' : 'home')}
+              className={`flex flex-col items-center text-[10px] font-bold ${activeTab.includes('dashboard') ? 'text-orange-600' : 'text-slate-500'}`}>
+              <i data-lucide="user" className="w-5 h-5 mb-0.5"></i> ড্যাশবোর্ড
+            </button>
+          </nav>
+
+          {/* Modern Footer */}
+          <footer className="bg-slate-900 text-slate-400 text-xs py-8 px-4 mt-16 border-t border-slate-800">
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
+              <div>
+                <span className="text-lg font-black text-white">Shop<span className="text-green-500">BD</span></span>
+                <p className="text-[11px] text-slate-500 mt-1">বাংলাদেশের বিশ্বস্ত ও দ্রুত বর্ধনশীল মাল্টি-ভেন্ডর ই-কমার্স ইকোসিস্টেম।</p>
+              </div>
+              <div className="text-slate-500 text-[11px]">
+                কপিরাইট © ২০২৬ ShopBD Technologies Ltd. সর্বস্বত্ব সংরক্ষিত।
+              </div>
+            </div>
+          </footer>
+        </div>
+      );
+    };
+
+    // Render Mount
+    const container = document.getElementById('root');
+    const root = ReactDOM.createRoot(container);
+    root.render(
+      <AppProvider>
+        <MainApp />
+      </AppProvider>
+    );
+  </script>
+</body>
+</html>
